@@ -14,7 +14,6 @@ breakdown of the 1-wire and MPSSE commands used. Set the debug to level 5 to get
 
 Like the Raspbery pi 1-Wire GPIO overlay, you will need a pull up resistor on the GPIO pin. I use a 4k7 pull up to the 5v line on the FT232h. See Image:
 
-![FT232H Wiring](resources/wiring.jpg "FT232H wiring
-)
+![FT232H Wiring](https://raw.githubusercontent.com/TuxInvader/ft232h-1wire/master/resources/wiring.jpg "FT232H wiring")
 
 
