@@ -1,5 +1,7 @@
 1-Wire bus over GPIO on FT232H
 
+See Also: [Adafruit GPIO fork with 1-Wire Support](https://github.com/TuxInvader/Adafruit_Python_GPIO)
+
 Implementation of 1-wire using the Adafruit FT232H Breakout board.
 
 Created using hints and examples from Adafruits GPIO library, and Neenars PyDigitemp:
@@ -16,14 +18,17 @@ and also the fine documentation from FTDI and Dallas/Maxim:
  * [1-Wire Search](https://www.maximintegrated.com/en/app-notes/index.mvp/id/187)
  * [Maxim DS18B20](http://datasheets.maximintegrated.com/en/ds/DS18B20.pdf)
 
-See test files for example usage. The w1ftdi class contains lots of debugging information, so you can get a full
-breakdown of the 1-wire and MPSSE commands used. Set the debug to level 5 to get the most verbose output.
+
+See test files in examples folder for usage. 
+
+The w1ftdi class contains lots of debugging information, so you can get a full breakdown of the 1-wire and MPSSE commands used. Set the debug to level 5 to get the most verbose output.
 
 ## Wiring
 
 You will need to provide a pull-up resistor on the GPIO line which you want to use for 1-Wire. This will provide power in parasite mode power mode. I use a 4k7 pull up to the 5v line on the FT232h. See Image below:
 
 ![FT232H Wiring](https://raw.githubusercontent.com/TuxInvader/ft232h-1wire/master/resources/wiring.jpg "FT232H wiring")
+![FT232H Diagram](https://raw.githubusercontent.com/TuxInvader/ft232h-1wire/master/resources/ft232h-1wire.png "FT232H wiring Diagram")
 
 ## 1-Wire
 
@@ -33,3 +38,17 @@ You will need to provide a pull-up resistor on the GPIO line which you want to u
 
 1-Wire can run at two speeds, standard mode, and overdrive. Timings are included for running in overdrive, but I have no devices which support it, so I haven't tested whether it works.
 
+## Examples
+
+ * examples/test1.py
+   Performs a search of the 1-wire bus and reports the devices found.
+
+ * examples/test2.py
+   Performs a search of the 1-wire bus and then reads the temperature from any DS18B20 devices present.
+
+ * examples/fever-checker.py
+   Uses a modified Adafruit_GPIO library to talk to a DS18B20 over 1-wire, and control some LEDs with standard GPIO, and update an I2C Seven Segment display with the temperature reading. See the wiring diagram:
+
+  ![Fever-Check Diagram](https://raw.githubusercontent.com/TuxInvader/ft232h-1wire/master/resources/fever-check-diagram.png)
+
+   
