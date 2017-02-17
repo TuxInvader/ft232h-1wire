@@ -5,12 +5,15 @@
 # https://www.maximintegrated.com/en/app-notes/index.mvp/id/126
 # https://www.maximintegrated.com/en/app-notes/index.mvp/id/187
 
+import sys
+sys.path.append("..")
+
 from w1ftdi import W1ftdi
 from ds18b20 import Ds18b20
 
 debug = 2  # debug level 0 to 5
 pin   = 8  # pin c0
-overdrive = True
+overdrive = False
 
 # Open and initialise the FT232h for 1-Wire
 print "TEST 1: Perform Rom Search..."

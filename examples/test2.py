@@ -5,6 +5,9 @@
 # https://www.maximintegrated.com/en/app-notes/index.mvp/id/126
 # https://www.maximintegrated.com/en/app-notes/index.mvp/id/187
 
+import sys
+sys.path.append("..")
+
 from w1ftdi import W1ftdi
 from ds18b20 import Ds18b20
 
