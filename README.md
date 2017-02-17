@@ -41,13 +41,13 @@ You will need to provide a pull-up resistor on the GPIO line which you want to u
 ## Examples
 
  * examples/test1.py
-   Performs a search of the 1-wire bus and reports the devices found.
+   - Performs a search of the 1-wire bus and reports the devices found.
 
  * examples/test2.py
-   Performs a search of the 1-wire bus and then reads the temperature from any DS18B20 devices present.
+   - Performs a search of the 1-wire bus and then reads the temperature from any DS18B20 devices present.
 
  * examples/fever-checker.py
-   Uses a modified Adafruit_GPIO library to talk to a DS18B20 over 1-wire, and control some LEDs with standard GPIO, and update an I2C Seven Segment display with the temperature reading. See the wiring diagram:
+   - Uses a modified Adafruit_GPIO library to talk to a DS18B20 over 1-wire, and control some LEDs with standard GPIO, and update an I2C Seven Segment display with the temperature reading. See the wiring diagram:
 
   ![Fever-Check Diagram](https://raw.githubusercontent.com/TuxInvader/ft232h-1wire/master/resources/fever-check-diagram.png)
 
