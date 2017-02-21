@@ -9,19 +9,28 @@ Created using hints and examples from Adafruits GPIO library, and Neenars PyDigi
  * [Adafruit GPIO](https://github.com/adafruit/Adafruit_Python_GPIO)
  * [PyDigiTemp](https://github.com/neenar/pydigitemp)
 
-and also the fine documentation from FTDI and Dallas/Maxim:
+### Specification Docs
+
+#### FTDI - MPSSE
 
  * [MPSSE AN 135](http://www.ftdichip.com/Support/Documents/AppNotes/AN_135_MPSSE_Basics.pdf)
  * [MPSSE AN 108](http://www.ftdichip.com/Support/Documents/AppNotes/AN_108_Command_Processor_for_MPSSE_and_MCU_Host_Bus_Emulation_Modes.pdf)
 
+#### 1-Wire
+
  * [1-Wire in software](https://www.maximintegrated.com/en/app-notes/index.mvp/id/126)
  * [1-Wire Search](https://www.maximintegrated.com/en/app-notes/index.mvp/id/187)
+ * [AN4255 (Power for extended features)](http://pdfserv.maximintegrated.com/en/an/AN4255.pdf)
+
+#### Thermometers
+
  * [Maxim DS18B20](http://datasheets.maximintegrated.com/en/ds/DS18B20.pdf)
 
+#### iButton 
 
-## DS1977 iButton Support
  * [Maxim iButton (DS1977)](https://datasheets.maximintegrated.com/en/ds/DS1977.pdf)
 
+### Examples/Test
 
 See test files in examples folder for usage. 
 
