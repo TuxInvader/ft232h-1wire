@@ -31,18 +31,18 @@ class Ds1977(W1ftdi):
         self.write   = 0xc8
         self.ctrl    = 0xd0
         self._rc     = False
+        self._od     = False
 
         # Init FTDI 1-Wire
         self.open()
         self.sync()
         self.setup_clock()
 
-        # Overdrive
-        self.skip_rom_od()
-        self.reset()
         
     def _ready(self):
         if self.reset():
+            if self._od is False:
+                self.skip_rom_od()
             if self._rc:
                 self.resume()
             else:
