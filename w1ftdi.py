@@ -59,7 +59,7 @@ class W1ftdi(object):
         if self.pullup is not None:
             self.set_pin(self.pullup, False, False)
         else:
-            self.set_pin(self.pin, True, False)
+            self.set_pin(self.pin, False, True)
         self.write_gpio_state()
 
         # Create the context for FTDI
