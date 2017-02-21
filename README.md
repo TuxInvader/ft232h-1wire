@@ -30,13 +30,6 @@ Created using hints and examples from Adafruits GPIO library, and Neenars PyDigi
 
  * [Maxim iButton (DS1977)](https://datasheets.maximintegrated.com/en/ds/DS1977.pdf)
 
-## Wiring
-
-You will need to provide a pull-up resistor on the GPIO line which you want to use for 1-Wire. This will provide power in parasite mode power mode. I use a 4k7 pull up to the 5v line on the FT232h. See Image below:
-
-![FT232H Wiring](https://raw.githubusercontent.com/TuxInvader/ft232h-1wire/master/resources/wiring.jpg "FT232H wiring")
-![FT232H Diagram](https://raw.githubusercontent.com/TuxInvader/ft232h-1wire/master/resources/ft232h-1wire.png "FT232H wiring Diagram")
-
 ## 1-Wire
 
 1-Wire is managed entirley by the master. All communications begin with a reset signal, followed by a command and a sequence of reads/writes. The master transmits a binary 1 by holding the line low for a brief period, and a binary 0 by holding the line low for a much longer period. A read is elicited by briefly pulling the line low, and then looking for a response. The slave lets the line return high to signal a 1, and pulls it low to signal a 0.
@@ -44,6 +37,14 @@ You will need to provide a pull-up resistor on the GPIO line which you want to u
 1-Wire includes a search function to locate slave devices and recovery their ROM codes. If there is only one device on the bus then the master may send a skip-rom or read-rom command, otherwise all commands except for skip,read,search need to address a device first. All devices except for the one being addressed will go to sleep until the next reset signal.
 
 1-Wire can run at two speeds, standard mode, and overdrive. Timings are included for running in overdrive, but I have no devices which support it, so I haven't tested whether it works.
+
+
+## Wiring (Example using DS18B20)
+
+You will need to provide a pull-up resistor on the GPIO line which you want to use for 1-Wire. This will provide power in parasite mode power mode. I use a 4k7 pull up to the 5v line on the FT232h. See Image below:
+
+![FT232H Wiring](https://raw.githubusercontent.com/TuxInvader/ft232h-1wire/master/resources/wiring.jpg "FT232H wiring")
+![FT232H Diagram](https://raw.githubusercontent.com/TuxInvader/ft232h-1wire/master/resources/ft232h-1wire.png "FT232H wiring Diagram")
 
 ## Examples
 
