@@ -19,6 +19,10 @@ and also the fine documentation from FTDI and Dallas/Maxim:
  * [Maxim DS18B20](http://datasheets.maximintegrated.com/en/ds/DS18B20.pdf)
 
 
+## DS1977 iButton Support
+ * [Maxim iButton (DS1977)](https://datasheets.maximintegrated.com/en/ds/DS1977.pdf)
+
+
 See test files in examples folder for usage. 
 
 The w1ftdi class contains lots of debugging information, so you can get a full breakdown of the 1-wire and MPSSE commands used. Set the debug to level 5 to get the most verbose output.
