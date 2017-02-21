@@ -31,7 +31,6 @@ class Ds1977(W1ftdi):
         self.write   = 0xc8
         self.ctrl    = 0xd0
         self._rc     = False
-        self._od     = False
 
         # Init FTDI 1-Wire
         self.open()
