@@ -21,7 +21,7 @@ OVERDRIVE = False     # Should Overdrive be used?
 
 class W1ftdi(object):
 
-    def __init__(self, pin, debug=DEBUG, overdrive=OVERDRIVE):
+    def __init__(self, pin, debug=DEBUG, overdrive=OVERDRIVE, pullup=None):
         self._rmmod()
         self._dbg = debug
         self._ctx = ftdi.new()
@@ -31,12 +31,15 @@ class W1ftdi(object):
         self._output = None
         self._debug(1, "1Wire: Init")
         self._max_buffer = 0
+        self._overdrive = overdrive
+        self._od = False
 
         # Set the pin to use
         self.pin = pin
+        self.pullup = pullup
 
         # Set up delay timers (clock frequencies)
-        self.enable_overdrive(overdrive)
+        self._reset_clocks(False)
 
         # Two ways to delay. dump a byte to tms, or pulse the clock for n
         # bits. A 1 bit pulse seems to take the same as time as a 8bit 
@@ -48,10 +51,18 @@ class W1ftdi(object):
         # MPSSE Command to read GPIO
         self.read_gpio   = '\x81\x83'
 
-        # Set our pin to out/high. self.low and self.high will be
-        # created containing the MPSSE commands to toggle our 1Wire pin.
-        self.set_pin(pin, True, True)
+        # If we have a pullup pin, set it to low by default, this pin controls
+        # switching on a strong_pullup if the device needs extra power. It is
+        # activated when pullup_and_check() is called.
+        # set_pin() always sets our GPIO flags for our GPIO pin too, so that gets
+        # done here regardless of having an addition pullup control pin.
+        if self.pullup is not None:
+            self.set_pin(self.pullup, False, False)
+        else:
+            self.set_pin(self.pin, True, False)
+        self.write_gpio_state()
 
+        # Create the context for FTDI
         if self._ctx == 0:
             raise Exception("Failed to open FTDI")
         atexit.register(self.close)
@@ -82,26 +93,26 @@ class W1ftdi(object):
 
     # Set up the delay timings, needs to be run at initialisation, and when
     # switching to/from overdrive mode
-    def enable_overdrive(self, overdrive):
+    def _reset_clocks(self, overdrive):
 
-        if overdrive:
+        if self._overdrive and overdrive:
             self._debug(2, "1Wire: Overdrive is enabled")
             # overdrive speeds
-            self.overdrive = True
+            self._od = True
             self.clock_A = self._get_delay_cmd(0.0000010)
             self.clock_B = self._get_delay_cmd(0.0000075)
             self.clock_C = self._get_delay_cmd(0.0000075)
             self.clock_D = self._get_delay_cmd(0.0000025)
             self.clock_E = self._get_delay_cmd(0.0000010)
             self.clock_F = self._get_delay_cmd(0.0000070)
-            self.clock_G = self._get_delay_cmd(0.0000025)
-            self.clock_H = self._get_delay_cmd(0.0000700)
-            self.clock_I = self._get_delay_cmd(0.0000085)
+            self.clock_G = self._get_delay_cmd(0.0000050)
+            self.clock_H = self._get_delay_cmd(0.0000480)
+            self.clock_I = self._get_delay_cmd(0.0000075)
             self.clock_J = self._get_delay_cmd(0.0000400)
         else:
             # standard clock speeds
             self._debug(2, "1Wire: Overdrive is disabled")
-            self.overdrive = False
+            self._od = False
             self.clock_A = self._get_delay_cmd(0.000006)
             self.clock_B = self._get_delay_cmd(0.000064)
             self.clock_C = self._get_delay_cmd(0.000060)
@@ -275,16 +286,17 @@ class W1ftdi(object):
     def reset(self):
 
         self._debug(2, "1Wire: Reset")
-        commands = self.clock_H + self.low + self.delay + self.high + self.clock_I + self.delay + \
+        commands =  self.clock_G + self.high + self.delay + \
+                    self.clock_H + self.low + self.delay + self.high + self.clock_I + self.delay + \
                     self.read_gpio + self.clock_J + self.delay + self.read_gpio 
 
         self._write(str(commands))
         present = self._read(4)
 
         if present == '\xff'*4:
-            if self.overdrive:
-                self._debug(2, "1Wire: No Devices Present. Disabling Overdrive");
-                self.enable_overdrive(False)
+            if self._od:
+                self._debug(2, "1Wire: No Devices in Overdrive mode, trying standard reset");
+                self._reset_clocks(False)
                 return self.reset()
             else:
                 self._debug(2, "1Wire: No Devices Present")
@@ -292,6 +304,28 @@ class W1ftdi(object):
         else:
             self._debug(2, "1Wire: Devices Present")
             return True
+
+    # A device needs to do some processing, sleep some, and then check for a
+    # result. If pullup is defined, we'll ensure that pin is high while we sleep.
+    def pullup_and_check(self, ms=10):
+        self._debug(2, "1Wire: Slave Signal Check")
+        secs = 1.0 * ms / 1000.0
+        # If pullup is defined, then its providing addition power, keep the
+        # pin up for the duration of the work.
+        if self.pullup is not None:
+            self.set_pin(self.pullup, True, True)
+            up = self.get_gpio_cmd()
+            self.set_pin(self.pullup, False, False)
+            down = self.get_gpio_cmd()
+            self._write(str(up))
+            time.sleep( secs )
+            self._write(str(down))
+        else:
+            time.sleep( secs )
+        # Check for a response from the slave
+        byte = self.read_byte()
+        self._debug(2, "1Wire: Slave is Signalling: {:x}".format(byte))
+        return byte
 
     # Write a bit to the 1-wire bus, either a 1 or a 0
     def write_bit(self, bit):
@@ -339,8 +373,11 @@ class W1ftdi(object):
 
     # write multiple bytes to the bus
     def write_bytes(self, data):
-        for byte in data:
-            self.write_byte(byte)
+        try:
+            for byte in data:
+                self.write_byte(byte)
+        except TypeError:
+            self.write_byte(data)
 
     # Use the read_bit function to read bytes from the bus
     def read_byte(self):
@@ -373,6 +410,7 @@ class W1ftdi(object):
     
     # There is only one device on the bus, so ask it to identify itself.
     def rom_read(self):
+        self._debug(3, "1Wire: Read ROM")
         rom = bytearray(8)
         self.write_byte(0x33)
         for i in range(8):
@@ -380,9 +418,44 @@ class W1ftdi(object):
         self._debug(1, "rom_read discovered: {}".format(self.bytes2string(rom)))
         return rom 
 
+    # Issue a skip rom for overdrive, we can then perform a search at OD speed, or
+    # if only one device, send it a command.
+    def skip_rom_od(self):
+        self._debug(3, "1Wire: Skip ROM OD")
+        if self._overdrive:
+            self.write_byte(0x3c)
+            self._reset_clocks(True)
+        else:
+            raise Exception("Overdrive is not enabled")
+
     # There is only one device on the bus so skip ROM matching.
     def skip_rom(self):
         self.write_byte(0xcc)
+
+    # Target the ROM specified
+    def _match_rom(self, rom):
+        if type(rom) is str:
+            rom = self.string2bytes(rom)
+        if self._overdrive:
+            self.write_byte(0x69)
+            self._reset_clocks(True)
+        else:
+            self.write_byte(0x55)
+        self.write_bytes(rom)
+
+    # Address the ROM if given, else perform a skip_rom()
+    def address_rom(self, rom):
+        if rom is None:
+            self._debug(3, "1Wire: Skip ROM")
+            self.skip_rom()
+        else:
+            self._debug(3, "1Wire: Match ROM")
+            self._match_rom(rom)
+
+    # Resume, you should only call this if the ROM has been addressed previously
+    def resume(self):
+        self._debug(3, "1Wire: Resume")
+        self.write_byte(0xa5)
 
     # Search for ROMs on the 1-wire bus
     def search_roms(self):
@@ -453,22 +526,7 @@ class W1ftdi(object):
             raise Exception("CRC Check Failed")
         return complete
         
-        
-    # Target the ROM specified
-    def _match_rom(self, rom):
-        if type(rom) is str:
-            rom = self.string2bytes(rom)
-        self.write_byte(0x55)
-        self.write_bytes(rom)
-
-    # Address the ROM if given, else perform a skip_rom()
-    def address_rom(self, rom):
-        if rom is None:
-            self.skip_rom()
-        else:
-            self._match_rom(rom)
-        
-    # Return an a string representation of the device ROM
+   # Return an a string representation of the device ROM
     def bytes2string(self, bytesarray):
         return ":".join("{:02x}".format(c) for c in bytesarray)
 
