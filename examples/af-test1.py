@@ -35,3 +35,6 @@ if owm.reset():
     print "Found roms: {}".format(roms)
 print "TEST 1: Complete"
 
+# Close FTDI
+ft232h.close()
+
