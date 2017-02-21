@@ -59,7 +59,6 @@ class Ds1977(W1ftdi):
         self.address_rom(self.rom)
         self.write_bytes( self.string2bytes("cc0000") )
         data = self.read_bytes(3)
-        self._debug(1, "{},{},{}".format(data[0], data[1], data[2]))
         if data[0] == data[1] and data[2] == 255:
             return ( data[0] >> 5 )
         else:
