@@ -36,7 +36,7 @@ Created using hints and examples from Adafruits GPIO library, and Neenars PyDigi
 
 1-Wire includes a search function to locate slave devices and recovery their ROM codes. If there is only one device on the bus then the master may send a skip-rom or read-rom command, otherwise all commands except for skip,read,search need to address a device first. All devices except for the one being addressed will go to sleep until the next reset signal.
 
-1-Wire can run at two speeds, standard mode, and overdrive. Timings are included for running in overdrive, but I have no devices which support it, so I haven't tested whether it works.
+1-Wire can run at two speeds, standard mode, and overdrive. Timings are included for running in overdrive, and have been tested with a DS1977 iButton module.
 
 
 ## Wiring (Example using DS18B20)
