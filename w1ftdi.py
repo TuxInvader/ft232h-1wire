@@ -33,6 +33,8 @@ class W1ftdi(object):
         self._max_buffer = 0
         self._overdrive = overdrive
         self._od = False
+        self._rc = False
+        self._gpiol1 = 5
 
         # Set the pin to use
         self.pin = pin
@@ -109,6 +111,7 @@ class W1ftdi(object):
             self.clock_H = self._get_delay_cmd(0.0000480)
             self.clock_I = self._get_delay_cmd(0.0000075)
             self.clock_J = self._get_delay_cmd(0.0000400)
+            self.clock_Z = self._get_delay_cmd(0.000000)
         else:
             # standard clock speeds
             self._debug(2, "1Wire: Overdrive is disabled")
@@ -123,6 +126,7 @@ class W1ftdi(object):
             self.clock_H = self._get_delay_cmd(0.000480)
             self.clock_I = self._get_delay_cmd(0.000070)
             self.clock_J = self._get_delay_cmd(0.000410)
+            self.clock_Z = self._get_delay_cmd(0.000000)
 
     # Buffer write commands and then send them to the MPSSE with a flush
     def enable_command_buffer(self):
@@ -202,6 +206,8 @@ class W1ftdi(object):
             self._debug(3, "MPSSE: Closed. FTDI Released")
             ftdi.free(self._ctx)
         self._ctx = None
+        self._od = False
+        self._rc = False
 
     # Synchronize the MPSSE engine by sending the bad command and looking through the
     # buffer until we see it's rejection.
@@ -307,24 +313,49 @@ class W1ftdi(object):
 
     # A device needs to do some processing, sleep some, and then check for a
     # result. If pullup is defined, we'll ensure that pin is high while we sleep.
-    def pullup_and_check(self, ms=10):
-        self._debug(2, "1Wire: Slave Signal Check")
+    # NB: If we use pin 5 (D5 (GPIOL1)), then we use MPSSE 0x88 and 0x89 to
+    # to detect the 1/0 pulses from the slave at completion.
+    def pullup_and_check(self, ms=10, commands=""):
+        if self._buffer is False:
+            raise Exception("You must buffer commands when using pullup_and_check() to ensure correct timing")
         secs = 1.0 * ms / 1000.0
-        # If pullup is defined, then its providing addition power, keep the
+        up = None
+        down = None
+
+        # If pullup is defined, then its providing additional power, keep the
         # pin up for the duration of the work.
         if self.pullup is not None:
+            self._debug(2, "1Wire: Pullup Enabling additional power via GPIO {}".format(self.pullup))
             self.set_pin(self.pullup, True, True)
             up = self.get_gpio_cmd()
             self.set_pin(self.pullup, False, False)
             down = self.get_gpio_cmd()
+
+        # If we're using GPIOL1 (pin 5) then we can get the MPSSE to wait for the
+        # slave to signal completion, if not we just have to sleep.
+        #if self.pin is self._gpiol1:
+        #   wait_signal = self.clock_Z + bytearray( (0x88, 0x89) )
+        #   commands = wait_signal
+        #   if up is not None:
+        #       commands = up + wait_signal + down
+        #   self.flush_command_buffer()
+        #   self._debug(2, "1Wire: Pullup Waiting for Signal")
+        #   self._write( str( commands ) )
+        #else:
+
+        self._debug(2, "1Wire: Pullup Sleeping for {}ms".format(ms))
+        if up is not None:
             self._write(str(up))
+            self.flush_command_buffer()
             time.sleep( secs )
             self._write(str(down))
         else:
+            self.flush_command_buffer()
             time.sleep( secs )
+
         # Check for a response from the slave
         byte = self.read_byte()
-        self._debug(2, "1Wire: Slave is Signalling: {:x}".format(byte))
+        self._debug(2, "1Wire: Pullup Complete, Returning First Byte: {:x}".format(byte))
         return byte
 
     # Write a bit to the 1-wire bus, either a 1 or a 0
@@ -373,6 +404,8 @@ class W1ftdi(object):
 
     # write multiple bytes to the bus
     def write_bytes(self, data):
+        if type(data) is str:
+            data = bytearray( data )
         try:
             for byte in data:
                 self.write_byte(byte)
@@ -535,8 +568,14 @@ class W1ftdi(object):
         return bytearray(codecs.decode(string.replace(":",""),"hex"))
 
     # Calculate CRC, result should be 0x00
-    def crc(self, data):
-        poly = 0x8c # x8,x5,x4,+ 1 inverse of 0x131 & 0xff
+    def crc(self, data, bits=8):
+
+        if bits == 8:
+            poly = 0x8c # x8,x5,x4,+ 1 inverse of 0x131 & 0xff
+        elif bits == 16:
+            poly = 0xa001 # x16, x15, x2, +1
+        else:
+            raise Exception("Unsupported CRC length")
         crc = 0x00
         for byte in data:
             for bit in range(8):

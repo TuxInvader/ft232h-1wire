@@ -6,12 +6,13 @@
 # https://www.maximintegrated.com/en/app-notes/index.mvp/id/187
 
 import sys
+import time
 sys.path.append("..")
 
 from w1ftdi import W1ftdi
 from ds18b20 import Ds18b20
 
-debug = 2  # debug level 0 to 5
+debug = 5  # debug level 0 to 5
 pin   = 8  # pin c0
 overdrive = False
 
@@ -23,9 +24,9 @@ w1.sync()
 w1.setup_clock()
 
 # set some arbitrary GPIO states, and write them.
-w1.set_pin(3, True, False)
-w1.set_pin(7, True, False)
-w1.write_gpio_state()
+#w1.set_pin(3, True, False)
+#w1.set_pin(7, True, False)
+#w1.write_gpio_state()
 
 # Search for devices on the 1-Wire bus
 if w1.reset():

@@ -2,6 +2,9 @@
 
 Implementation of 1-wire using the Adafruit FT232H Breakout board.
 
+GPIO seems to function significanlty better on the second MPSSE (ACBUS) on my board. 
+If you have problems using the D4-D7 pins, then try using C0-C7
+
 See Also: [Adafruit GPIO fork with 1-Wire Support](https://github.com/TuxInvader/Adafruit_Python_GPIO)
 
 Created using hints and examples from Adafruits GPIO library, and Neenars PyDigitemp:
